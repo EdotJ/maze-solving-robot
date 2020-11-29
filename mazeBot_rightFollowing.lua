@@ -8,6 +8,7 @@ function sysCall_init()
     rearRight = sim.getObjectHandle("bubbleRob_rearRightSensor")
     frontLeft = sim.getObjectHandle("bubbleRob_frontLeftSensor")
     rearLeft = sim.getObjectHandle("bubbleRob_rearLeftSensor")
+    backSensor = sim.getObjectHandle("bubbleRob_backSensor")
 
     wheelRadius = 0.01
     cellSize = 0.5
@@ -28,7 +29,11 @@ function sysCall_init()
     wCurveL, wCurveR, minCurveTime = precomputeCurve()
 
     robotSpeed = 0.1
-
+    desiredOrientation = 0
+    isRotating = false
+    doorsUnlocked = false
+    hostageLost = false
+    
     xml =
         '<ui title="' ..
         sim.getObjectName(bubbleRobBase) ..
@@ -50,29 +55,49 @@ function sysCall_init()
 end
 
 function sysCall_actuation()
-    local leftMotorSpeed, rightMotorSpeed
-    -- print("State in actuation", state)
-    if (robotDrivingState == 1) then
-        print("Following wall")
-        leftMotorSpeed, rightMotorSpeed = followWall()
-    elseif (robotDrivingState == 2) then
-        print("Turning...")
-        leftMotorSpeed = wTurnL
-        rightMotorSpeed = wTurnR
-    elseif (robotDrivingState == 3) then
-        print("Curving...")
-        leftMotorSpeed = wCurveL
-        rightMotorSpeed = wCurveR
-    else
-        leftMotorSpeed = 0
-        rightMotorSpeed = 0
+
+    local shouldIUnlcokDoors = sim.getStringSignal("unlockDoors")
+
+    if(shouldIUnlcokDoors == "true" and not doorsUnlocked) then
+        if(not isRotating) then
+            turnAround()
+        end
+        rotate()
+        if(doorsUnlocked) then
+            sim.setStringSignal("doorsUnlocked","true")
+        end
+    else    
+        local leftMotorSpeed, rightMotorSpeed
+        -- print("State in actuation", state)
+        if (robotDrivingState == 1) then
+            print("Following wall")
+            leftMotorSpeed, rightMotorSpeed = followWall()
+        elseif (robotDrivingState == 2) then
+            print("Turning...")
+            leftMotorSpeed = wTurnL
+            rightMotorSpeed = wTurnR
+        elseif (robotDrivingState == 3) then
+            print("Curving...")
+            leftMotorSpeed = wCurveL
+            rightMotorSpeed = wCurveR
+        else
+            leftMotorSpeed = 0
+            rightMotorSpeed = 0
+        end
+        sim.setJointTargetVelocity(leftMotor, leftMotorSpeed)
+        sim.setJointTargetVelocity(rightMotor, rightMotorSpeed)
     end
-    sim.setJointTargetVelocity(leftMotor, leftMotorSpeed)
-    sim.setJointTargetVelocity(rightMotor, rightMotorSpeed)
 end
 
 function sysCall_sensing()
     local wallFront, wallSide, isWallInFront, isWallInRear
+
+    hostageLost = sim.readProximitySensor(noseSensor) == 0
+
+    if (doorsUnlocked and hostageLost) then 
+        print("LETS WAIT FOR HIM")
+    end
+    
     wallFront = sim.readProximitySensor(noseSensor) > 0
     if (direction == "right") then
         -- print ("distanceInFront", getDistance(frontRight, 1.21))
@@ -181,6 +206,45 @@ function precomputeCurve()
     wR = (curveSpeed - bodyDistanceToWheel * sign * wref) / wheelRadius
     t = (cellSize / 2 * math.pi / 2) / wref
     return wL, wR, t
+end
+
+function turnAround()
+    local sign = sim.getObjectOrientation(bubbleRobBase, -1)[3] / math.abs(sim.getObjectOrientation(bubbleRobBase, -1)[3])
+    desiredOrientation = offsetZero(roundToClosestQuadrant(-1 * sign * math.pi + sim.getObjectOrientation(bubbleRobBase, -1)[3]))
+end
+
+function rotate()
+    isRotating = true
+    local rotSpeed = 2
+    local sign = (desiredOrientation / math.abs(desiredOrientation)) * -1
+    sim.setJointTargetVelocity(leftMotor, rotSpeed * sign)
+    sim.setJointTargetVelocity(rightMotor, -rotSpeed * sign)
+    local currentAngle = sim.getObjectOrientation(bubbleRobBase, -1)[3]
+
+    print(math.abs(desiredOrientation - currentAngle),  math.pi / 90)
+
+    if (math.abs(desiredOrientation - currentAngle) < math.pi / 90) then
+        print("Ending orientation", sim.getObjectOrientation(bubbleRobBase, -1)[3] * 57.2957795)
+        desiredOrientation = 0
+        isRotating = false
+        doorsUnlocked = true
+    end
+end
+
+function roundToClosestQuadrant(num)
+    if (num % (math.pi / 2) >= math.pi / 4) then
+        return num - num % (math.pi / 2) + (math.pi / 2)
+    else
+        return num - num % (math.pi / 2)
+    end
+end
+
+function offsetZero(num)
+    if (num == 0) then
+        return 0.0001
+    else
+        return num
+    end
 end
 
 function sysCall_cleanup()
