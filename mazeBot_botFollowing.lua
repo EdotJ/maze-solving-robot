@@ -73,8 +73,8 @@ function goBackward()
         leftMotorSpeed = 0
         rightMotorSpeed = 0
     end
-    sim.setJointTargetVelocity(leftMotor, -leftMotorSpeed)
-    sim.setJointTargetVelocity(rightMotor, -rightMotorSpeed)
+    sim.setJointTargetVelocity(leftMotor, -0.2)
+    sim.setJointTargetVelocity(rightMotor, -0.2)
 end
 
 function goForward()
