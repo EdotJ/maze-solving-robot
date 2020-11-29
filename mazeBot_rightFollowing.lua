@@ -103,7 +103,6 @@ function sysCall_sensing()
     if (doorsUnlocked and hostageLost) then 
         -- do something
     else
-    
         wallFront = sim.readProximitySensor(noseSensor) > 0
         if (direction == "right") then
             -- print ("distanceInFront", getDistance(frontRight, 1.21))

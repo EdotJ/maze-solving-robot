@@ -4,6 +4,7 @@ function sysCall_init()
     leftMotor = sim.getObjectHandle("bubbleRob_leftMotor#0") -- Handle of the left motor
     rightMotor = sim.getObjectHandle("bubbleRob_rightMotor#0") -- Handle of the right motor
     noseSensor = sim.getObjectHandle("bubbleRob_sensingNose#0") -- Handle of the proximity sensor
+    frontSensor = sim.getObjectHandle("bubbleRob_sensingNose#1") 
     frontRight = sim.getObjectHandle("bubbleRob_frontRightSensor#0")
     rearRight = sim.getObjectHandle("bubbleRob_rearRightSensor#0")
     frontLeft = sim.getObjectHandle("bubbleRob_frontLeftSensor#0")
@@ -29,71 +30,108 @@ function sysCall_init()
 
     robotSpeed = 0.1
 
-    active = false;
+    active = false
+    moveBackwards = false
 end
 
 function sysCall_actuation()
     active = sim.getStringSignal("wakeUp")
 
     if (active) then
-        local leftMotorSpeed, rightMotorSpeed
-
-        if (robotDrivingState == 1) then
-            leftMotorSpeed, rightMotorSpeed = followWall()
-        elseif (robotDrivingState == 2) then
-            leftMotorSpeed = wTurnL
-            rightMotorSpeed = wTurnR
-        elseif (robotDrivingState == 3) then
-            leftMotorSpeed = wCurveL
-            rightMotorSpeed = wCurveR
+        if(moveBackwards) then
+            goBackward()
         else
-            leftMotorSpeed = 0
-            rightMotorSpeed = 0
+            goForward()
         end
-        sim.setJointTargetVelocity(leftMotor, leftMotorSpeed)
-        sim.setJointTargetVelocity(rightMotor, rightMotorSpeed)
     end
 end
 
 function sysCall_sensing()
 
     if(active) then
-        wallFront = sim.readProximitySensor(noseSensor) > 0
-        if (direction == "right") then
-            isWallInFront = wallDetected(getDistance(frontRight, 1.21), 0.25, 0.25)
-            isWallInRear = wallDetected(getDistance(rearRight, 1.21), 0.25, 0.25)
-        else
-            isWallInFront = wallDetected(getDistance(frontLeft, 1.21), 0.25, 0.25)
-            isWallInRear = wallDetected(getDistance(rearLeft, 1.21), 0.25, 0.25)
+
+        moveBackwards = sim.readProximitySensor(frontSensor) > 0
+
+        if(not moveBackwards) then 
+            rotations()
         end
-        wallSide = isWallInFront and isWallInRear
-        if (robotDrivingState == 1) then
-            lastTime = sim.getSimulationTime()
-            if wallFront then
-                robotDrivingState = 2
-            end
-            if not wallSide then
-                robotDrivingState = 3
-            end
-        elseif (robotDrivingState == 2) then
-            local timeElapsed = ((sim.getSimulationTime() - lastTime) > minTurnTime)
-            if (timeElapsed) then
-                print("Is turning done?", timeElapsed)
-            end
-            if (wallSide and timeElapsed) then
-                robotDrivingState = 1
-            end
-        elseif (robotDrivingState == 3) then
-            local timeElapsed = ((sim.getSimulationTime() - lastTime) > minCurveTime)
-            if (timeElapsed) then
-                print("Is curving done?", timeElapsed)
-            end
-            if (wallFront) then
-                robotDrivingState = 1
-            end
-            if (wallSide and timeElapsed) then
-                robotDrivingState = 1
-            end
+    end
+end
+
+function goBackward()
+    local leftMotorSpeed, rightMotorSpeed
+
+    if (robotDrivingState == 1) then
+        leftMotorSpeed, rightMotorSpeed = followWall()
+    elseif (robotDrivingState == 2) then
+        leftMotorSpeed = -wTurnL
+        rightMotorSpeed = -wTurnR
+    elseif (robotDrivingState == 3) then
+        leftMotorSpeed = -wCurveL
+        rightMotorSpeed = -wCurveR
+    else
+        leftMotorSpeed = 0
+        rightMotorSpeed = 0
+    end
+    sim.setJointTargetVelocity(leftMotor, -leftMotorSpeed)
+    sim.setJointTargetVelocity(rightMotor, -rightMotorSpeed)
+end
+
+function goForward()
+    local leftMotorSpeed, rightMotorSpeed
+
+    if (robotDrivingState == 1) then
+        leftMotorSpeed, rightMotorSpeed = followWall()
+    elseif (robotDrivingState == 2) then
+        leftMotorSpeed = wTurnL
+        rightMotorSpeed = wTurnR
+    elseif (robotDrivingState == 3) then
+        leftMotorSpeed = wCurveL
+        rightMotorSpeed = wCurveR
+    else
+        leftMotorSpeed = 0
+        rightMotorSpeed = 0
+    end
+    sim.setJointTargetVelocity(leftMotor, leftMotorSpeed)
+    sim.setJointTargetVelocity(rightMotor, rightMotorSpeed)
+end
+
+function rotations()
+    wallFront = sim.readProximitySensor(noseSensor) > 0
+    if (direction == "right") then
+        isWallInFront = wallDetected(getDistance(frontRight, 1.21), 0.25, 0.25)
+        isWallInRear = wallDetected(getDistance(rearRight, 1.21), 0.25, 0.25)
+    else
+        isWallInFront = wallDetected(getDistance(frontLeft, 1.21), 0.25, 0.25)
+        isWallInRear = wallDetected(getDistance(rearLeft, 1.21), 0.25, 0.25)
+    end
+    wallSide = isWallInFront and isWallInRear
+    if (robotDrivingState == 1) then
+        lastTime = sim.getSimulationTime()
+        if wallFront then
+            robotDrivingState = 2
+        end
+        if not wallSide then
+            robotDrivingState = 3
+        end
+    elseif (robotDrivingState == 2) then
+        local timeElapsed = ((sim.getSimulationTime() - lastTime) > minTurnTime)
+        if (timeElapsed) then
+            print("Is turning done?", timeElapsed)
+        end
+        if (wallSide and timeElapsed) then
+            robotDrivingState = 1
+        end
+    elseif (robotDrivingState == 3) then
+        local timeElapsed = ((sim.getSimulationTime() - lastTime) > minCurveTime)
+        if (timeElapsed) then
+            print("Is curving done?", timeElapsed)
+        end
+        if (wallFront) then
+            robotDrivingState = 1
+        end
+        if (wallSide and timeElapsed) then
+            robotDrivingState = 1
         end
     end
 end
