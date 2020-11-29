@@ -178,7 +178,6 @@ function precomputeTurn()
     end
     wL = -sign * turnSpeed / wheelRadius
     wR = sign * turnSpeed / wheelRadius
-    -- 0.1 * 90 / 0.01 = 15.7
     t = cellSize / 2 * (bodyDistanceToWheel * math.pi / 2) / turnSpeed
     return wL, wR, t
 end
