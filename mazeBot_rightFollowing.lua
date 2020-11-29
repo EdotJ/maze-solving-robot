@@ -49,9 +49,9 @@ function sysCall_init()
             <label text="" style="* {margin-left: 300px;}"/>
         </ui>
         ]]
-        print(xml)
-    ui = simUI.create(xml)
-    simUI.setPosition(ui, 1500, 500)
+        -- print(xml)
+    -- ui = simUI.create(xml)
+    -- simUI.setPosition(ui, 1500, 500)
 
 end
 
@@ -101,7 +101,7 @@ function sysCall_sensing()
     hostageLost = sim.readProximitySensor(backSensor) == 0
 
     if (doorsUnlocked and hostageLost) then 
-        print("LETS WAIT FOR HIM")
+        -- do something
     else
     
         wallFront = sim.readProximitySensor(noseSensor) > 0
