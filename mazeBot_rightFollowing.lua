@@ -49,6 +49,7 @@ function sysCall_init()
             <label text="" style="* {margin-left: 300px;}"/>
         </ui>
         ]]
+    ui = simUI.create(xml)
 end
 
 function sysCall_actuation()
@@ -114,17 +115,11 @@ function sysCall_sensing()
             end
         elseif (robotDrivingState == 2) then
             local timeElapsed = ((sim.getSimulationTime() - lastTime) > minTurnTime)
-            if (timeElapsed) then
-                print("Is turning done?", timeElapsed)
-            end
             if (wallSide and timeElapsed) then
                 robotDrivingState = 1
             end
         elseif (robotDrivingState == 3) then
             local timeElapsed = ((sim.getSimulationTime() - lastTime) > minCurveTime)
-            if (timeElapsed) then
-                print("Is curving done?", timeElapsed)
-            end
             if (wallFront) then
                 robotDrivingState = 1
             end

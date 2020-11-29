@@ -1,14 +1,14 @@
 function sysCall_init()
     -- This is executed exactly once, the first time this script is executed
     bubbleRobBase = sim.getObjectAssociatedWithScript(sim.handle_self) -- this is bubbleRob's handle
-    leftMotor = sim.getObjectHandle("bubbleRob_leftMotor#0") -- Handle of the left motor
-    rightMotor = sim.getObjectHandle("bubbleRob_rightMotor#0") -- Handle of the right motor
-    noseSensor = sim.getObjectHandle("bubbleRob_sensingNose#0") -- Handle of the proximity sensor
-    frontSensor = sim.getObjectHandle("bubbleRob_sensingNose#1") 
-    frontRight = sim.getObjectHandle("bubbleRob_frontRightSensor#0")
-    rearRight = sim.getObjectHandle("bubbleRob_rearRightSensor#0")
-    frontLeft = sim.getObjectHandle("bubbleRob_frontLeftSensor#0")
-    rearLeft = sim.getObjectHandle("bubbleRob_rearLeftSensor#0")
+    leftMotor = sim.getObjectHandle("hostageRob_leftMotor") -- Handle of the left motor
+    rightMotor = sim.getObjectHandle("hostageRob_rightMotor") -- Handle of the right motor
+    noseSensor = sim.getObjectHandle("hostageRob_sensingNoseMaze") -- Handle of the proximity sensor
+    frontSensor = sim.getObjectHandle("hostageRob_sensingNoseBot") 
+    frontRight = sim.getObjectHandle("hostageRob_frontRightSensor")
+    rearRight = sim.getObjectHandle("hostageRob_rearRightSensor")
+    frontLeft = sim.getObjectHandle("hostageRob_frontLeftSensor")
+    rearLeft = sim.getObjectHandle("hostageRob_rearLeftSensor")
 
     wheelRadius = 0.01
     cellSize = 0.5
@@ -116,17 +116,11 @@ function rotations()
         end
     elseif (robotDrivingState == 2) then
         local timeElapsed = ((sim.getSimulationTime() - lastTime) > minTurnTime)
-        if (timeElapsed) then
-            print("Is turning done?", timeElapsed)
-        end
         if (wallSide and timeElapsed) then
             robotDrivingState = 1
         end
     elseif (robotDrivingState == 3) then
         local timeElapsed = ((sim.getSimulationTime() - lastTime) > minCurveTime)
-        if (timeElapsed) then
-            print("Is curving done?", timeElapsed)
-        end
         if (wallFront) then
             robotDrivingState = 1
         end
